@@ -15,6 +15,8 @@ if (elgg_get_context() == 'rest') {
 	// Register init events
 	elgg_register_event_handler('init', 'system', 'spotconnect_init');
 	elgg_register_event_handler('init', 'system', 'spotconnect_expose_functions', 501);
+} else {
+	elgg_register_event_handler('init', 'system', 'spotconnect_global_init');
 }
 
 /**
@@ -37,6 +39,14 @@ function spotconnect_init() {
 	// Override REST API init
 	elgg_register_plugin_hook_handler('rest', 'init', 'spotconnect_rest_init_handler');	
 }	
+
+/**
+ * Global init handler
+ */
+function spotconnect_global_init() {
+	// Admin menu
+	elgg_register_event_handler('pagesetup','system','spotconnect_adminmenu');
+}
 
 // Use custom authentication handlers for the api
 function spotconnect_rest_init_handler() {
@@ -93,4 +103,13 @@ function spotconnect_expose_functions() {
 			'type' => 'string'
 		)
 	), 'Post a bookmark', 'POST', TRUE, TRUE);	
+}
+
+/**
+ * Sets up API admin menu. Triggered on pagesetup.
+ */
+function spotconnect_adminmenu() {
+	if (elgg_in_context('admin')) {
+		elgg_register_admin_menu_item('administer', 'apikey', 'spotconnect');
+	}
 }
