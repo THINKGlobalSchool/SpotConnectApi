@@ -70,6 +70,19 @@ function bookmark_post($title, $address) {
 		return FALSE;
 	}
 
+	// Check for hash tags in title
+	$pattern = "/(?:^|\s)(\#\w+)/";
+	preg_match_all($pattern, $title, $matches);
+	
+	if (!empty($matches[1])) {
+		$tags = array();
+		// Got hashtags
+		foreach ($matches[1] as $idx => $tag) {
+			$tag = strtolower(str_replace("#", '', $tag));
+			$tags[] = $tag;
+		}
+	}
+
 	$bookmark = new ElggObject;
 	$bookmark->subtype = "bookmarks";
 	$bookmark->owner_guid = $user_guid;
@@ -77,6 +90,7 @@ function bookmark_post($title, $address) {
 	$bookmark->title = $title;
 	$bookmark->address = $address;
 	$bookmark->access_id = $access;
+	$bookmark->tags = $tags;
 
 	if ($bookmark->save()) {
 		add_to_river('river/object/bookmarks/create','create', elgg_get_logged_in_user_guid(), $bookmark->getGUID());
