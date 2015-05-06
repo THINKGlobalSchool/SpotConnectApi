@@ -29,12 +29,14 @@ function spotconnect_init() {
 	elgg_register_library('spotconnect:post', $lib_path . 'post.php');
 	elgg_register_library('spotconnect:user', $lib_path . 'user.php');
 	elgg_register_library('spotconnect:util', $lib_path . 'util.php');
+	elgg_register_library('spotconnect:helpers', $lib_path . 'helpers.php');
 
 	// Load libs
 	elgg_load_library('spotconnect:auth');
 	elgg_load_library('spotconnect:post');
 	elgg_load_library('spotconnect:user');
 	elgg_load_library('spotconnect:util');
+	elgg_load_library('spotconnect:helpers');
 
 	// Override REST API init
 	elgg_register_plugin_hook_handler('rest', 'init', 'spotconnect_rest_init_handler');	
@@ -103,6 +105,34 @@ function spotconnect_expose_functions() {
 			'type' => 'string'
 		)
 	), 'Post a bookmark', 'POST', TRUE, TRUE);	
+
+	// Allow image posts
+	expose_function('photos.post', 'photos_post', array(
+		'batch' => array(
+			'type' => 'string',
+			'required' => TRUE
+		),
+		'album' => array(
+			'type' => 'string',
+			'required' => FALSE
+		),
+		'description' => array(
+			'type' => 'string',
+			'required' => FALSE
+		)
+	), 'Post photos', 'POST', TRUE, TRUE);	
+
+	// Finalize photo posting
+	expose_function('photos.finalize.post', 'photos_finalize_post', array(
+		'batch' => array(
+			'type' => 'string',
+			'required' => TRUE
+		),
+		'album' => array(
+			'type' => 'string',
+			'required' => FALSE
+		)
+	), 'Finalize photo posts', 'POST', TRUE, TRUE);	
 }
 
 /**

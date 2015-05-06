@@ -101,3 +101,153 @@ function bookmark_post($title, $address) {
 
 	return $bookmark->guid;
 }
+
+/**
+ * Post Photos
+ */
+function photos_post($batch, $album_guid = FALSE, $description = NULL) {
+	if (!$album_guid) {
+		$album_guid = spotconnect_get_mobile_album();
+	}
+
+	elgg_load_library('tidypics:upload');
+
+	$album = get_entity($album_guid);
+
+	//Make sure we can write to the container (for groups)
+	if (!$album->getContainerEntity()->canWriteToContainer(elgg_get_logged_in_user_guid())) {
+		throw new APIException(elgg_echo('tidypics:nopermission'));
+	}
+
+	$errors = array();
+	$messages = array();
+
+	// probably POST limit exceeded
+	if (empty($_FILES)) {
+		throw new APIException(elgg_echo('tidypics:exceedpostlimit'));
+	}
+	
+	$file = $_FILES['file'];
+
+	// If theres no error, remove the error key (Tidypics isn't handling this well)
+	if ($file['error'] === 0) {
+		unset($file['error']);
+	}
+
+	// Fix odd casing coming into the API
+	$file['type'] = strtolower($file['type']);
+
+	$mime = tp_upload_get_mimetype($file['name']);
+	if ($mime == 'unknown') {
+		throw new APIException(elgg_echo('tidypics:not_image', array($file['name'])));
+	}
+
+	$image = new TidypicsImage();
+	$image->container_guid = $album->guid;
+	$image->access_id = $album->access_id;
+	$image->setMimeType($mime);
+	$image->batch = $batch;
+
+	if ($description) {
+		$image->description = $description;
+	}
+
+	try {
+		$image->save($file);
+
+		$album->prependImageList(array($image->guid));
+
+		if (elgg_get_plugin_setting('img_river_view', 'tidypics') === "all") {
+			add_to_river('river/object/image/create', 'create', $image->getOwnerGUID(), $image->getGUID());
+		}
+
+		system_message(elgg_echo('success'));
+	} catch (Exception $e) {
+		throw new APIException($e->getMessage());
+	}
+
+	return $image->guid;
+}
+
+/**
+ * Finish Posting Photos (handles batch logic)
+ */
+function photos_finalize_post($batch, $album_guid = FALSE) {
+
+	if (!$album_guid) {
+		$album_guid = spotconnect_get_mobile_album();
+	}
+
+	$img_river_view = elgg_get_plugin_setting('img_river_view', 'tidypics');
+
+
+	$album = get_entity($album_guid);
+
+	// Check permissions on album container (for groups)
+	if (!$album->getContainerEntity()->canWriteToContainer(elgg_get_logged_in_user_guid())) {
+	 	throw new APIException(elgg_echo('tidypics:nopermission'));
+	}
+
+	$params = array(
+		'type'            => 'object',
+		'subtype'         => 'image',
+		'metadata_names'  => 'batch',
+		'metadata_values' => $batch,
+		'limit'           => 0
+	);
+
+	$images = elgg_get_entities_from_metadata($params);
+
+	if ($images) {	
+		// Create a new batch object to contain these photos
+		$batch = new ElggObject();
+		$batch->subtype = "tidypics_batch";
+		$batch->access_id = $album->access_id;
+		$batch->container_guid = $album->guid;
+
+		if ($batch->save()) {
+			foreach ($images as $image) {
+				// Add batch relationship
+				add_entity_relationship($image->guid, "belongs_to_batch", $batch->getGUID());
+			}
+		}
+
+	} else {
+		throw new APIException(elgg_echo('tidypics:noimagesuploaded'));
+	}
+
+	// "added images to album" river
+	if ($img_river_view == "batch" && $album->new_album == false) {
+		add_to_river('river/object/tidypics_batch/create', 'create', $batch->getOwnerGUID(), $batch->getGUID());
+	}
+
+	// "created album" river
+	if ($album->new_album) {
+		$album->new_album = false;
+		$album->first_upload = true;
+
+		add_to_river('river/object/album/create', 'create', $album->getOwnerGUID(), $album->getGUID());
+
+		// "created album" notifications
+		// we throw the notification manually here so users are not told about the new album until
+		// there are at least a few photos in it
+		if ($album->shouldNotify()) {
+			object_notifications('create', 'object', $album);
+			$album->last_notified = time();
+		}
+	} else {
+		// "added image to album" notifications
+		if ($album->first_upload) {
+			$album->first_upload = false;
+		}
+
+		if ($album->shouldNotify()) {
+			// This is a bit of a hack, but there's no other way to control the subject for image notifications
+			global $CONFIG;
+			$CONFIG->register_objects['object']['album'] = elgg_echo('tidypics:newphotos', array($album->title));
+			object_notifications('create', 'object', $album);
+			$album->last_notified = time();
+		}
+	}
+	return $batch->guid;
+}
