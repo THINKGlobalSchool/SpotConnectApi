@@ -147,6 +147,7 @@ function photos_post($batch, $album_guid = FALSE, $description = NULL) {
 	$image->access_id = $album->access_id;
 	$image->setMimeType($mime);
 	$image->batch = $batch;
+	$image->spot_connect_upload = 1; // Set a flag to identify these images later on if we have too
 
 	if ($description) {
 		$image->description = $description;
@@ -154,8 +155,6 @@ function photos_post($batch, $album_guid = FALSE, $description = NULL) {
 
 	try {
 		$image->save($file);
-
-		$album->prependImageList(array($image->guid));
 
 		if (elgg_get_plugin_setting('img_river_view', 'tidypics') === "all") {
 			add_to_river('river/object/image/create', 'create', $image->getOwnerGUID(), $image->getGUID());
@@ -173,13 +172,11 @@ function photos_post($batch, $album_guid = FALSE, $description = NULL) {
  * Finish Posting Photos (handles batch logic)
  */
 function photos_finalize_post($batch, $album_guid = FALSE) {
-
 	if (!$album_guid) {
 		$album_guid = spotconnect_get_mobile_album();
 	}
 
 	$img_river_view = elgg_get_plugin_setting('img_river_view', 'tidypics');
-
 
 	$album = get_entity($album_guid);
 
@@ -206,10 +203,18 @@ function photos_finalize_post($batch, $album_guid = FALSE) {
 		$batch->container_guid = $album->guid;
 
 		if ($batch->save()) {
+			$image_list = array();
+
 			foreach ($images as $image) {
 				// Add batch relationship
 				add_entity_relationship($image->guid, "belongs_to_batch", $batch->getGUID());
+
+				// Add image to image list
+				$image_list[] = $image_guid;
 			}
+
+			// Update the album's image list
+			$album->prependImageList($image_list);
 		}
 
 	} else {
