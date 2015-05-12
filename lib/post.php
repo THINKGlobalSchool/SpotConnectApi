@@ -210,7 +210,7 @@ function photos_finalize_post($batch, $album_guid = FALSE) {
 				add_entity_relationship($image->guid, "belongs_to_batch", $batch->getGUID());
 
 				// Add image to image list
-				$image_list[] = $image_guid;
+				$image_list[] = $image->guid;
 			}
 
 			// Update the album's image list
