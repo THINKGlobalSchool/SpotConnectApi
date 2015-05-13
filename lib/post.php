@@ -138,6 +138,12 @@ function photos_post($batch, $album_guid = FALSE, $description = NULL) {
 	$file['type'] = strtolower($file['type']);
 
 	$mime = tp_upload_get_mimetype($file['name']);
+
+	// Fix mimetype mismatch (going to let tidypics determine it)
+	if ($mime !== $file['type']) {
+		$file['type'] = $mime;
+	}
+
 	if ($mime == 'unknown') {
 		throw new APIException(elgg_echo('tidypics:not_image', array($file['name'])));
 	}
