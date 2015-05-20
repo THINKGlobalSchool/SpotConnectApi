@@ -71,17 +71,7 @@ function bookmark_post($title, $address) {
 	}
 
 	// Check for hash tags in title
-	$pattern = "/(?:^|\s)(\#\w+)/";
-	preg_match_all($pattern, $title, $matches);
-	
-	if (!empty($matches[1])) {
-		$tags = array();
-		// Got hashtags
-		foreach ($matches[1] as $idx => $tag) {
-			$tag = strtolower(str_replace("#", '', $tag));
-			$tags[] = $tag;
-		}
-	}
+	$tags = spotconnect_parse_tags($title);
 
 	$bookmark = new ElggObject;
 	$bookmark->subtype = "bookmarks";
@@ -157,6 +147,7 @@ function photos_post($batch, $album_guid = FALSE, $description = NULL) {
 
 	if ($description) {
 		$image->description = $description;
+		$image->tags = spotconnect_parse_tags($description);
 	}
 
 	try {

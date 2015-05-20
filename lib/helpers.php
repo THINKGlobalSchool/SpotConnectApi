@@ -49,3 +49,21 @@ function spotconnect_get_mobile_album($user_guid = NULL) {
 		return $album->guid;
 	}
 }
+
+function spotconnect_parse_tags($string) {
+	// Check for hash tags in title
+	$pattern = "/(?:^|\s)(\#\w+)/";
+	preg_match_all($pattern, $string, $matches);
+	
+	if (!empty($matches[1])) {
+		$tags = array();
+		// Got hashtags
+		foreach ($matches[1] as $idx => $tag) {
+			$tag = strtolower(str_replace("#", '', $tag));
+			$tags[] = $tag;
+		}
+
+		return $tags;
+	} 
+	return FALSE;
+}
