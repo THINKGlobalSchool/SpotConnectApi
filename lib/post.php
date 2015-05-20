@@ -200,27 +200,30 @@ function photos_finalize_post($batch, $album_guid = FALSE) {
 		$batch->container_guid = $album->guid;
 
 		if ($batch->save()) {
-			$image_list = array();
-
 			foreach ($images as $image) {
 				// Add batch relationship
 				add_entity_relationship($image->guid, "belongs_to_batch", $batch->getGUID());
-
-				// Add image to image list
-				$image_list[] = $image->guid;
 			}
-
-			// Update the album's image list
-			$album->prependImageList($image_list);
 		}
 
 	} else {
-		throw new APIException(elgg_echo('tidypics:noimagesuploaded'));
+		// No images uploaded! Display an error. Delete the album if it's brand new
+		if ($album->new_album) {
+			$album->delete();
+		}
+		register_error('');
+		echo elgg_echo('tidypics:noimagesuploaded');
+		forward(REFERER);
 	}
 
 	// "added images to album" river
 	if ($img_river_view == "batch" && $album->new_album == false) {
-		add_to_river('river/object/tidypics_batch/create', 'create', $batch->getOwnerGUID(), $batch->getGUID());
+		elgg_create_river_item(array(
+			'view' => 'river/object/tidypics_batch/create',
+			'action_type' => 'create',
+			'subject_guid' => $batch->getOwnerGUID(),
+			'object_guid' => $batch->getGUID()
+		));
 	}
 
 	// "created album" river
@@ -228,28 +231,19 @@ function photos_finalize_post($batch, $album_guid = FALSE) {
 		$album->new_album = false;
 		$album->first_upload = true;
 
-		add_to_river('river/object/album/create', 'create', $album->getOwnerGUID(), $album->getGUID());
-
-		// "created album" notifications
-		// we throw the notification manually here so users are not told about the new album until
-		// there are at least a few photos in it
-		if ($album->shouldNotify()) {
-			object_notifications('create', 'object', $album);
-			$album->last_notified = time();
-		}
+		elgg_create_river_item(array(
+			'view' => 'river/object/album/create',
+			'action_type' => 'create',
+			'subject_guid' => $album->getOwnerGUID(),
+			'object_guid' => $album->getGUID()
+		));
 	} else {
 		// "added image to album" notifications
 		if ($album->first_upload) {
 			$album->first_upload = false;
 		}
-
-		if ($album->shouldNotify()) {
-			// This is a bit of a hack, but there's no other way to control the subject for image notifications
-			global $CONFIG;
-			$CONFIG->register_objects['object']['album'] = elgg_echo('tidypics:newphotos', array($album->title));
-			object_notifications('create', 'object', $album);
-			$album->last_notified = time();
-		}
 	}
+
+	elgg_trigger_event('create', 'object', $album);
 	return $batch->guid;
 }

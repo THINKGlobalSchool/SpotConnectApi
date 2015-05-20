@@ -11,7 +11,7 @@
  */
 
 // Register hooks in REST context
-if (elgg_get_context() == 'rest') {
+if (elgg_get_context() == 'services') {
 	// Register init events
 	elgg_register_event_handler('init', 'system', 'spotconnect_init');
 	elgg_register_event_handler('init', 'system', 'spotconnect_expose_functions', 501);
@@ -72,31 +72,31 @@ function spotconnect_rest_init_handler() {
  */
 function spotconnect_expose_functions() {
 	// Get infinity token
-	expose_function("auth.get_user_pass_auth_token", "auth_get_infinity_token", array(
+	elgg_ws_expose_function("auth.get_user_pass_auth_token", "auth_get_infinity_token", array(
 		'username' => array('type' => 'string'),
 		'password' => array('type' => 'string'),
 	), elgg_echo('auth.gettoken'),	'POST', TRUE, FALSE);
 
 	// Get infinity token via google sign in
-	expose_function("auth.get_google_auth_token", "auth_google_get_infinity_token", array(
+	elgg_ws_expose_function("auth.get_google_auth_token", "auth_google_get_infinity_token", array(
 		'email' => array('type' => 'string')
 	), elgg_echo('auth.gettoken'),	'POST', TRUE, FALSE);
 
 	// Get user information
-	expose_function("user.get_profile", "user_get_profile", array(), "Get user profile", 'GET', TRUE, TRUE);
+	elgg_ws_expose_function("user.get_profile", "user_get_profile", array(), "Get user profile", 'GET', TRUE, TRUE);
 
 	// Ping
-	expose_function("util.ping", "util_ping", array(), "Ping the server", 'GET', TRUE, FALSE);
+	elgg_ws_expose_function("util.ping", "util_ping", array(), "Ping the server", 'GET', TRUE, FALSE);
 
 	// Allow wire posts
-	expose_function('thewire.post', 'wire_post', array(
+	elgg_ws_expose_function('thewire.post', 'wire_post', array(
 		'text' => array(
 			'type' => 'string'
 		)
 	), 'Post to the wire', 'POST', TRUE, TRUE);	
 
 	// Allow bookmarks posts
-	expose_function('bookmark.post', 'bookmark_post', array(
+	elgg_ws_expose_function('bookmark.post', 'bookmark_post', array(
 		'title' => array(
 			'type' => 'string',
 			'required' => FALSE
@@ -107,7 +107,7 @@ function spotconnect_expose_functions() {
 	), 'Post a bookmark', 'POST', TRUE, TRUE);	
 
 	// Allow image posts
-	expose_function('photos.post', 'photos_post', array(
+	elgg_ws_expose_function('photos.post', 'photos_post', array(
 		'batch' => array(
 			'type' => 'string',
 			'required' => TRUE
@@ -123,7 +123,7 @@ function spotconnect_expose_functions() {
 	), 'Post photos', 'POST', TRUE, TRUE);	
 
 	// Finalize photo posting
-	expose_function('photos.finalize.post', 'photos_finalize_post', array(
+	elgg_ws_expose_function('photos.finalize.post', 'photos_finalize_post', array(
 		'batch' => array(
 			'type' => 'string',
 			'required' => TRUE
