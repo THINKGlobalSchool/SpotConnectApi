@@ -203,6 +203,8 @@ function photos_finalize_post($batch, $album_guid = FALSE) {
 			foreach ($images as $image) {
 				// Add batch relationship
 				add_entity_relationship($image->guid, "belongs_to_batch", $batch->getGUID());
+
+				$album->prependImageList(array($image->guid));
 			}
 		}
 
