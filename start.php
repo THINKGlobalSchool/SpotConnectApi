@@ -26,6 +26,7 @@ function spotconnect_init() {
 	// Register libs
 	$lib_path = elgg_get_plugins_path() . 'spotconnect/lib/';
 	elgg_register_library('spotconnect:auth', $lib_path . 'auth.php');
+	elgg_register_library('spotconnect:entities', $lib_path . 'entities.php');
 	elgg_register_library('spotconnect:post', $lib_path . 'post.php');
 	elgg_register_library('spotconnect:user', $lib_path . 'user.php');
 	elgg_register_library('spotconnect:util', $lib_path . 'util.php');
@@ -33,6 +34,7 @@ function spotconnect_init() {
 
 	// Load libs
 	elgg_load_library('spotconnect:auth');
+	elgg_load_library('spotconnect:entities');
 	elgg_load_library('spotconnect:post');
 	elgg_load_library('spotconnect:user');
 	elgg_load_library('spotconnect:util');
@@ -133,6 +135,13 @@ function spotconnect_expose_functions() {
 			'required' => FALSE
 		)
 	), 'Finalize photo posts', 'POST', TRUE, TRUE);	
+
+	elgg_ws_expose_function('albums.list', 'albums_list', array(
+		'user_guid' => array(
+			'type' => 'int',
+			'required' => FALSE
+		)
+	), 'List user albums', 'GET', TRUE, FALSE);
 }
 
 /**
