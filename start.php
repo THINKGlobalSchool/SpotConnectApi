@@ -141,7 +141,7 @@ function spotconnect_expose_functions() {
 			'type' => 'int',
 			'required' => FALSE
 		)
-	), 'List user albums', 'GET', TRUE, FALSE);
+	), 'List user albums', 'GET', TRUE, TRUE);
 }
 
 /**
