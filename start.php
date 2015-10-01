@@ -121,6 +121,10 @@ function spotconnect_expose_functions() {
 		'description' => array(
 			'type' => 'string',
 			'required' => FALSE
+		),
+		'tags' => array(
+			'type' => 'string',
+			'required' => FALSE
 		)
 	), 'Post photos', 'POST', TRUE, TRUE);	
 

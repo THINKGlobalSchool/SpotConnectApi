@@ -95,7 +95,7 @@ function bookmark_post($title, $address) {
 /**
  * Post Photos
  */
-function photos_post($batch, $album_guid = FALSE, $description = NULL) {
+function photos_post($batch, $album_guid = FALSE, $description = NULL, $tags = NULL) {
 	if (!$album_guid) {
 		$album_guid = spotconnect_get_mobile_album();
 	}
@@ -147,7 +147,10 @@ function photos_post($batch, $album_guid = FALSE, $description = NULL) {
 
 	if ($description) {
 		$image->description = $description;
-		$image->tags = spotconnect_parse_tags($description);
+	}
+
+	if ($tags) {
+		$image->tags = string_to_tag_array($tags);
 	}
 
 	try {
